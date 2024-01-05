@@ -15,17 +15,26 @@
 #include <serial.h>
 #include "hc_sr04.h"
 #include "avr/interrupt.h"
+#include "event_groups.h"
+
 // #define LIGHT_PIN PC0 // Define the pin for the light
 #define P_LIGHT_PIN_Front PC0
 #define P_LIGHT_PIN_Back PC6
 
-void create_all_application_tasks(void);
+#define FRONT_OBSTACLE_BIT (1 << 0)
+#define BACK_OBSTACLE_BIT  (1 << 1)
+extern EventGroupHandle_t xObstacleEventGroup;
 
+// Define your constants, include guards, and other includes...
+
+void create_all_application_tasks(void);
 void distanceMeasurementFrontTask(void *pvParameters);
 void distanceMeasurementBackTask(void *pvParameters);
-void obstacleDetectionTask(void *pvParameters);
-void obstacleDetectionForBackTask(void *pvParameters);
+void obstacleDetectionFrontTask(void *pvParameters);
+void obstacleDetectionBackTask(void *pvParameters);
+void turnOnLight(bool isFrontLight);
+void turnOffLight(bool isFrontLight);
 
-// Function to turn on/off the light
-void turnOnLight(bool frontLigth);
-void turnOffLight(bool frontLigth);
+
+void turnOnLight(bool frontLight);
+void turnOffLight(bool frontLight);
