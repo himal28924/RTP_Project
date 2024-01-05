@@ -18,3 +18,11 @@
 #define LIGHT_PIN PC0 // Define the pin for the light
 
 void create_all_application_tasks(void);
+
+void distanceMeasurementFrontTask(void *pvParameters);
+void distanceMeasurementBackTask(void *pvParameters);
+void obstacleDetectionTask(void *pvParameters);
+
+// Function to turn on/off the light
+void turnOnLight(void);
+void turnOffLight(void);

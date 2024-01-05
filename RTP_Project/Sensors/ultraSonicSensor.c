@@ -20,13 +20,13 @@ void initUltrasonicSensors(void) {
 
 uint16_t measureFrontDistance(void) {
 	// Code to measure front distance
-	uint16_t frontDistanceMeasured = hc_sr04_takeMeasurement(FRONT_SENSOR_TRIGGER_PIN, FRONT_SENSOR_ECHO_PIN);
+	uint16_t frontDistanceMeasured = hc_sr04_takeMeasurement(true);
 	return frontDistanceMeasured;
 }
 
 uint16_t measureBackDistance(void) {
 	// Code to measure back distance
-	uint16_t backDistanceMeasured = hc_sr04_takeMeasurement(BACK_SENSOR_TRIGGER_PIN, BACK_SENSOR_ECHO_PIN);
+	uint16_t backDistanceMeasured = hc_sr04_takeMeasurement(false);
 	return backDistanceMeasured;
 }
 
@@ -40,7 +40,7 @@ void frontSensorTask(void *pvParameters) {
 			xSemaphoreGive(xFrontDistanceSemaphore);
 		}
 
-		vTaskDelay(pdMS_TO_TICKS(500)); // Delay as required
+		vTaskDelay(pdMS_TO_TICKS(1000)); // Delay as required
 	}
 }
 
@@ -54,6 +54,6 @@ void backSensorTask(void *pvParameters) {
 			xSemaphoreGive(xBackDistanceSemaphore);
 		}
 
-		vTaskDelay(pdMS_TO_TICKS(500)); // Delay as required
+		vTaskDelay(pdMS_TO_TICKS(1000)); // Delay as required
 	}
 }
