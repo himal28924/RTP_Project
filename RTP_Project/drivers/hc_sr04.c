@@ -13,8 +13,8 @@
 
 //Trigger
 #define DDR_Trig DDRC
-#define P_TrigFront PC2
-#define P_TrigBack PC1
+	#define P_TrigFront PC2
+	#define P_TrigBack PC1
 #define PORT_trig PORTC
 #define P_Trig PC1
 

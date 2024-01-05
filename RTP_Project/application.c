@@ -44,6 +44,16 @@ void create_all_application_tasks(void)
     NULL,
     1, // Priority
     NULL);
+	
+	
+	// Create obstacle detection task
+	xTaskCreate(
+	obstacleDetectionForBackTask,
+	"obstacleDetectionForBack",
+	configMINIMAL_STACK_SIZE,
+	NULL,
+	1, // Priority
+	NULL);
 }
 
 // Implementations of distanceMeasurementTask and obstacleDetectionTask...
@@ -100,12 +110,12 @@ void obstacleDetectionTask(void *pvParameters)
 		if (distance < 500) // Assuming 20 cm as a constraint
 		{
 			printf("Obstacle too close! ,%d \n" , distance);
-			turnOnLight(); // Turn on the light
+			turnOnLight(true); // Turn on the light
 
 		}
 		else{
 			printf("Obstacle is far away from us ,%d \n" , distance);
-			turnOffLight();
+			turnOffLight(true);
 		}
 
 		
@@ -142,16 +152,57 @@ void distanceMeasurementBackTask(void *pvParameters)
 	}
 }
 
-// Function to turn on the light
-void turnOnLight(void)
+void obstacleDetectionForBackTask(void *pvParameters)
 {
+	printf("Obstacle detection task");
+
+	// In every task before loop:
+	#if (configUSE_APPLICATION_TASK_TAG == 1)
+	// Set taskTag
+	vTaskSetApplicationTaskTag(NULL, (void *)4 /*task id*/);
+	#endif
+
+	uint16_t distance;
+
+	while (1)
+	{
+		// Acquire the semaphore before reading the shared variable
+		if (xSemaphoreTake(xFrontDistanceSemaphore, portMAX_DELAY) == pdTRUE)
+		{
+			distance = backMeasuredDistance;
+			xSemaphoreGive(xFrontDistanceSemaphore); // Release the semaphore
+		}
+		// Check if distance is below a certain threshold
+		if (distance < 500) // Assuming 20 cm as a constraint
+		{
+			printf("Obstacle too close! ,%d \n" , distance);
+			turnOnLight(false); // Turn on the light
+
+		}
+		else{
+			printf("Obstacle is far away from us ,%d \n" , distance);
+			turnOffLight(false);
+		}
+
+		
+		vTaskDelay(2000 / portTICK_PERIOD_MS);
+	}
+}
+
+// Function to turn on the light
+void turnOnLight(bool frontLight)
+{
+	
+	uint8_t LIGHT_PIN = frontLight ? P_LIGHT_PIN_Front : P_LIGHT_PIN_Back; // Choose the correct pin based on the sensor
 	// Set LIGHT_PIN high
 	PORTC |= (1 << LIGHT_PIN);
 }
 
 // Function to turn off the light
-void turnOffLight(void)
+void turnOffLight(bool frontLight)
 {
+	uint8_t LIGHT_PIN = frontLight ? P_LIGHT_PIN_Front : P_LIGHT_PIN_Back; // Choose the correct pin based on the sensor
+
 	// Set LIGHT_PIN low
 	PORTC &= ~(1 << LIGHT_PIN);
 }

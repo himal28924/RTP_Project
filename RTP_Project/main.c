@@ -29,8 +29,10 @@ void initializeSystem(void)
 	trace_init();
 	stdio_initialise(ser_USART0);
 	status_leds_initialise(5);
-	DDRC |= (1 << LIGHT_PIN);
-	PORTC &= ~(1 << LIGHT_PIN);
+	DDRC |= (1 << P_LIGHT_PIN_Front);
+	PORTC &= ~(1 << P_LIGHT_PIN_Front);
+	DDRC |= (1 << P_LIGHT_PIN_Back);
+	PORTC &= ~(1 << P_LIGHT_PIN_Back);
 	hc_sr04_init();
 
 	printf("System Initialization Complete\n");

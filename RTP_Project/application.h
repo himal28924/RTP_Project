@@ -15,14 +15,17 @@
 #include <serial.h>
 #include "hc_sr04.h"
 #include "avr/interrupt.h"
-#define LIGHT_PIN PC0 // Define the pin for the light
+// #define LIGHT_PIN PC0 // Define the pin for the light
+#define P_LIGHT_PIN_Front PC0
+#define P_LIGHT_PIN_Back PC6
 
 void create_all_application_tasks(void);
 
 void distanceMeasurementFrontTask(void *pvParameters);
 void distanceMeasurementBackTask(void *pvParameters);
 void obstacleDetectionTask(void *pvParameters);
+void obstacleDetectionForBackTask(void *pvParameters);
 
 // Function to turn on/off the light
-void turnOnLight(void);
-void turnOffLight(void);
+void turnOnLight(bool frontLigth);
+void turnOffLight(bool frontLigth);
