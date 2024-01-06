@@ -1,12 +1,17 @@
 #include "application.h"
-#include "event_groups.h"
+#include <stdio.h>  
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define SAFE_DISTANCE_MULTIPLIER 2 // Example multiplier for safe distance
 
 #define THRESHOLD_DISTANCE 300
 
 // Task declarations
 void distanceMeasurementTask(void *pvParameters);
 void obstacleDetectionTask(void *pvParameters);
-
+bool calculateCollisionRisk(uint16_t measuredDistance);
+int getCarSpeed(void);
 // Shared variable and semaphore
 volatile uint16_t frontMeasuredDistance = 0;
 volatile uint16_t backMeasuredDistance = 0;
@@ -38,32 +43,37 @@ void create_all_application_tasks(void) {
 
 void distanceMeasurementFrontTask(void *pvParameters) {
 	
-	printf("Distance measurement Front task ");
+	printf("Distance measurement Front task\n");
 	// In every task before loop:
 	#if (configUSE_APPLICATION_TASK_TAG == 1)
 	// Set taskTag
-	vTaskSetApplicationTaskTag(NULL, (void *)1 /*task id*/);
+	vTaskSetApplicationTaskTag(NULL, (void *)3 /*task id*/);
 	#endif
 	
-	const TickType_t xFrequency = pdMS_TO_TICKS(1000); // Period of 1 second in ticks
+	const TickType_t xFrequency = pdMS_TO_TICKS(2000); // Period of 1 second in ticks
 
 	while (1) {
 		// Record the start time of the task.
 		TickType_t xStartTime = xTaskGetTickCount();
 
-		// Acquire the semaphore before updating the shared variable.
+		uint16_t distance = 0;
+
+		// Acquire the semaphore before reading the shared variable.
 		if (xSemaphoreTake(xFrontDistanceSemaphore, portMAX_DELAY) == pdTRUE) {
-			// Perform the distance measurement.
-			uint16_t distance = hc_sr04_takeMeasurement(true);
-
-			// Update the shared variable.
-			frontMeasuredDistance = distance;
-
-			// Release the semaphore.
+			frontMeasuredDistance = hc_sr04_takeMeasurement(true);
+			distance = frontMeasuredDistance;
+			// Release the semaphore as soon as the shared variable is read.
 			xSemaphoreGive(xFrontDistanceSemaphore);
-            if (distance < THRESHOLD_DISTANCE) {
-	            xEventGroupSetBits(xObstacleEventGroup, FRONT_OBSTACLE_BIT);
-            }
+		}
+
+		// Calculate the collision risk.
+		bool isHighRisk = calculateCollisionRisk(distance);
+		if (isHighRisk) {
+			printf("RISK!! RISK!!\n");
+			// Take immediate action, such as notifying for risk.
+			turnOnLight(false); // Indicate risk with the back light.
+			} else {
+			turnOffLight(false); // Turn off the back light if no risk.
 		}
 
 		// Task code finished execution, now wait until the end of the period.
@@ -84,30 +94,32 @@ void distanceMeasurementBackTask(void *pvParameters) {
 	// In every task before loop:
 	#if (configUSE_APPLICATION_TASK_TAG == 1)
 	// Set taskTag
-	vTaskSetApplicationTaskTag(NULL, (void *)3 /*task id*/);
+	vTaskSetApplicationTaskTag(NULL, (void *)1 /*task id*/);
 	#endif
 	
-	const TickType_t xFrequency = pdMS_TO_TICKS(1000); // Period of 1 second in ticks
+	const TickType_t xFrequency = pdMS_TO_TICKS(2000); // Period of 1 second in ticks
 
 	while (1) {
 		// Record the start time of the task.
 		TickType_t xStartTime = xTaskGetTickCount();
+		uint16_t distance = 0;
 
 		// Acquire the semaphore before updating the shared variable.
 		if (xSemaphoreTake(xBackDistanceSemaphore, portMAX_DELAY) == pdTRUE) {
 			// Perform the distance measurement.
-			uint16_t distance = hc_sr04_takeMeasurement(false);
-
-			// Update the shared variable.
-			backMeasuredDistance = distance;
-
-			// Release the semaphore.
-			xSemaphoreGive(xBackDistanceSemaphore);
-			if (distance < THRESHOLD_DISTANCE) {
-				xEventGroupSetBits(xObstacleEventGroup, BACK_OBSTACLE_BIT);
-			}			
+			backMeasuredDistance  = hc_sr04_takeMeasurement(false);
+			distance = backMeasuredDistance;
 		}
-
+		
+		bool isHighRisk = calculateCollisionRisk(distance);
+		if (isHighRisk) {
+			printf("RISK!! RISK!!\n");
+			// Take immediate action, such as notifying for risk.
+			turnOnLight(true); // Indicate risk with the front light.
+			} else {
+			turnOffLight(true); // Turn off the front light if no risk.
+		}
+		
 		// Task code finished execution, now wait until the end of the period.
 		// Calculate time spent in task execution.
 		TickType_t xTimeSpent = xTaskGetTickCount() - xStartTime;
@@ -163,6 +175,10 @@ void obstacleDetectionBackTask(void *pvParameters) {
 	}
 }
 
+void obstacleDetectionFront(){
+	
+}
+
 
 // Function to turn on the light
 void turnOnLight(bool frontLight)
@@ -182,4 +198,26 @@ void turnOffLight(bool frontLight)
 	PORTC &= ~(1 << LIGHT_PIN);
 }
 
+int getCarSpeed() {
+	// Assume cars' speed ranges from 30 to 100 units
+	return (rand() % 71) + 30;
+}
+
+// This function calculates the risk of collision
+bool calculateCollisionRisk(uint16_t measuredDistance) {
+	int otherCarSpeed = getCarSpeed(); // Simulate other car's speed
+	printf("\nOthers speed : %d", otherCarSpeed);
+	int ourCarSpeed = getCarSpeed(); // Get your car's current speed 
+	printf("our speed : %d", ourCarSpeed);
+
+	// Calculate safe stopping distance (you would define the logic for this)
+	int safeStoppingDistance = (ourCarSpeed + otherCarSpeed) * SAFE_DISTANCE_MULTIPLIER;
+	printf("safe Stopping Distance : %d", safeStoppingDistance);
+	printf(" measuredDistance  : %d", measuredDistance);
+
+	// Determine if there is a high risk of collision
+	bool isHighRisk = measuredDistance < safeStoppingDistance;
+
+	return isHighRisk;
+}
 
