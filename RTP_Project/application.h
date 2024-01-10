@@ -21,20 +21,10 @@
 #define P_LIGHT_PIN_Front PC0
 #define P_LIGHT_PIN_Back PC6
 
-#define FRONT_OBSTACLE_BIT (1 << 0)
-#define BACK_OBSTACLE_BIT  (1 << 1)
-extern EventGroupHandle_t xObstacleEventGroup;
-
-// Define your constants, include guards, and other includes...
 
 void create_all_application_tasks(void);
 void distanceMeasurementFrontTask(void *pvParameters);
 void distanceMeasurementBackTask(void *pvParameters);
-void obstacleDetectionFrontTask(void *pvParameters);
-void obstacleDetectionBackTask(void *pvParameters);
+
 void turnOnLight(bool isFrontLight);
 void turnOffLight(bool isFrontLight);
-
-
-void turnOnLight(bool frontLight);
-void turnOffLight(bool frontLight);
